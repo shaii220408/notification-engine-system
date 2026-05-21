@@ -20,6 +20,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final NotificationProducer notificationProducer;
     private final UserPreferenceService userPreferenceService;
+    private final RateLimiterService rateLimiterService;
 
     public NotificationResponse sendNotification(NotificationRequest request) {
 
@@ -31,7 +32,11 @@ public class NotificationService {
             throw new RuntimeException("Channel " + request.getChannel()
                     + " is disabled for user " + request.getUserId());
         }
-
+        if (!rateLimiterService.isAllowed(request.getUserId())) {
+            throw new RuntimeException("Rate limit exceeded for user: "
+                    + request.getUserId()
+                    + ". Max " + 5 + " notifications per minute.");
+        }
         Notification notification = Notification.builder()
                 .userId(request.getUserId())
                 .type(request.getType())
