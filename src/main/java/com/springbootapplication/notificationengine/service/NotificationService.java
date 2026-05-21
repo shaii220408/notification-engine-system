@@ -19,10 +19,18 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final NotificationProducer notificationProducer;
+    private final UserPreferenceService userPreferenceService;
 
     public NotificationResponse sendNotification(NotificationRequest request) {
 
         log.info("Received notification request for userId: {}", request.getUserId());
+        if (!userPreferenceService.isChannelEnabled(
+                request.getUserId(), request.getChannel().name())) {
+            log.warn("Channel {} is disabled for userId: {}",
+                    request.getChannel(), request.getUserId());
+            throw new RuntimeException("Channel " + request.getChannel()
+                    + " is disabled for user " + request.getUserId());
+        }
 
         Notification notification = Notification.builder()
                 .userId(request.getUserId())
